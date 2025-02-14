@@ -1,4 +1,5 @@
 # Library in Java
+Learning Java by doing a simple library using SQLite
 
 ## Run the code
 ````shell

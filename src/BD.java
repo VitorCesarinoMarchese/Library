@@ -57,9 +57,10 @@ public class BD {
         }
     }
 
+    // fix the id problem and do it smarter
     public boolean deleteBook(String name) {
         try {
-            statement.executeUpdate("DELETE FROM books WHERE name=" + name);
+            statement.executeUpdate("DElETE FROM books WHERE name= '" + name + "'");
             return true;
         }catch (SQLException e){
             System.err.println("Error deleting book: " + e.getMessage());

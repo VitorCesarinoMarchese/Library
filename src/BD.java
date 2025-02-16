@@ -1,4 +1,6 @@
-import javax.swing.plaf.nimbus.State;
+import Models.Book;
+import Models.Request.BookRequest;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +10,8 @@ public class BD {
     private Statement statement;
 
     public BD() {
-        connectDB(); // Connect to DB when object is created
+        connectDB();
     }
-
     private void connectDB() {
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:base.db");
@@ -20,14 +21,25 @@ public class BD {
             System.err.println("Database connection error: " + e.getMessage());
         }
     }
+    public void closeDB() {
+        try {
+            if (statement != null) statement.close();
+            if (connection != null) connection.close();
+        } catch (SQLException e) {
+            System.err.println("Error closing database: " + e.getMessage());
+        }
+    }
+
     public void printDB() {
         try {
+
             ResultSet resultSet = statement.executeQuery("SELECT * FROM books");
             while (resultSet.next()) {
-                System.out.println("Book ID: " + resultSet.getInt("id"));
-                System.out.println("Book NAME: " + resultSet.getString("name"));
-                System.out.println("Book PRICE: " + resultSet.getString("price"));
+                System.out.println("Models.Book ID: " + resultSet.getInt("id"));
+                System.out.println("Models.Book NAME: " + resultSet.getString("name"));
+                System.out.println("Models.Book PRICE: " + resultSet.getString("price"));
             }
+
         }catch (SQLException e){
             System.err.println("Error printing database: " + e.getMessage());
         }
@@ -47,34 +59,25 @@ public class BD {
         }
         return books;
     }
-    public void insertBook(String name, String price) {
+    public void insertBook(BookRequest book) {
         try {
             List<Book> rs = readDB();
-            int id = rs.size() + 1;
-            statement.executeUpdate("INSERT INTO books VALUES(" + id + ", '" + name + "', '" + price + "')");
+            int id = rs.get(rs.size() - 1).Id + 1;
+            statement.executeUpdate("INSERT INTO books VALUES(" + id + "," + "'" + book.Name + "'" + "," + "'" + book.Price + "'" + ")");
+            System.out.println("Book inserted with name: " + book.Name);
         }catch (SQLException e){
             System.err.println("Error inserting book: " + e.getMessage());
         }
     }
-
-    // fix the id problem and do it smarter
-    public boolean deleteBook(String name) {
+    public void deleteBook(int id) {
         try {
-            statement.executeUpdate("DElETE FROM books WHERE name= '" + name + "'");
-            return true;
+            statement.executeUpdate("DElETE FROM books WHERE id= '" + id + "'");
+            ResultSet name = statement.executeQuery("SELECT name FROM books WHERE id= '" + id + "'");
+            System.out.println("Book deleted with name: " + name.getString("name"));
         }catch (SQLException e){
             System.err.println("Error deleting book: " + e.getMessage());
-            return false;
         }
     }
 
-    public void closeDB() {
-        try {
-            if (statement != null) statement.close();
-            if (connection != null) connection.close();
-        } catch (SQLException e) {
-            System.err.println("Error closing database: " + e.getMessage());
-        }
-    }
 
 }

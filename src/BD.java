@@ -78,6 +78,14 @@ public class BD {
             System.err.println("Error deleting book: " + e.getMessage());
         }
     }
-
+    public void updateBook(int id, BookRequest book) {
+        try {
+            ResultSet oldName = statement.executeQuery("SELECT name FROM books WHERE id= '" + id + "'");
+            statement.executeUpdate( "UPDATE books SET name='" + book.Name + "', price='" + book.Price + "' WHERE id= '" + id + "'");
+            System.out.println("Book updated with name: " + book.Name);
+        }catch (SQLException e){
+            System.err.println("Error updating book: " + e.getMessage());
+        }
+    }
 
 }

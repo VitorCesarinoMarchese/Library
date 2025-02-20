@@ -123,7 +123,7 @@ public class BD {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.err.println("Erro ao inserir livro: " + e.getMessage());
+            System.err.println("Error inserting the book: " + e.getMessage());
         }
     }
     public void deleteBook(int id) {

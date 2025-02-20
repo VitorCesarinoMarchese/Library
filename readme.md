@@ -14,6 +14,6 @@ The database is designed to manage a library rent. containing 4 tables, **_users
 the id of the user how rented and the id of the book rented;
 ### How the last changes table works
 The **_last changes_** table is made to see how is the last user that edit a book.
-**It does not retain the previous state of a book**; instead, it only records the type of modification ("insert", "deletion" and "update"), who modified it and when the change happens.
+**It does not retain the previous state of a book**; instead, it only records the type of modification ("insert", "update" and "delete"), who modified it and when the change happens.
 
 ![alt text](./imgs/DBschema.png "DB Schema")

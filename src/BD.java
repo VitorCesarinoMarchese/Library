@@ -2,6 +2,8 @@ import Models.Book;
 import Models.Request.BookRequest;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +52,22 @@ public class BD {
                 System.out.println("Book TOTAL:" + resultSet.getInt("total_quantity"));
                 System.out.println("Book RENT:" + resultSet.getInt("rent_quantity"));
                 System.out.println("Book AVAILABLE:" + resultSet.getInt("available_quantity"));
+                System.out.println("---------------------------------------");
+            }
+        }catch (SQLException e){
+            System.err.println("Error printing database: " + e.getMessage());
+        }
+    }
+
+    public void printLastChanges() {
+        try {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM last_changes");
+            while (resultSet.next()) {
+                System.out.println("Last Change ID: " + resultSet.getInt("id"));
+                System.out.println("Book ID: " + resultSet.getString("book_id"));
+                System.out.println("User ID: " + resultSet.getString("user_id"));
+                System.out.println("Last Change Type:" + resultSet.getInt("type"));
+                System.out.println("Last Change DATE:" + resultSet.getString("date"));
                 System.out.println("---------------------------------------");
             }
         }catch (SQLException e){
@@ -126,11 +144,42 @@ public class BD {
             System.err.println("Error inserting the book: " + e.getMessage());
         }
     }
-    public void deleteBook(int id) {
-        try {
-            statement.executeUpdate("DElETE FROM books WHERE id= '" + id + "'");
-            ResultSet name = statement.executeQuery("SELECT name FROM books WHERE id= '" + id + "'");
-            System.out.println("Book deleted with name: " + name.getString("name"));
+
+    public void deleteBook(int id, int user) {
+        String getBookName = "SELECT name FROM books WHERE id= ?";
+        String deleteBook = "DElETE FROM books WHERE id= ?";
+        String insertLastChange = "INSERT INTO last_changes(book_id, user_id, type) VALUES(?, ?, ?)";
+
+
+        try(Connection connection = DriverManager.getConnection("jdbc:sqlite:database.db")){
+            String bookName = null;
+            PreparedStatement getBookNamestmt = connection.prepareStatement(getBookName);
+
+            connection.setAutoCommit(false);
+
+            getBookNamestmt.setInt(1, id);
+            ResultSet rs = getBookNamestmt.executeQuery();
+            if(rs.next()){
+                bookName = rs.getString("name");
+            }else{
+                throw new SQLException("No book find with ID: " + id);
+            }
+
+            try (PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBook)) {
+                deleteBookStmt.setInt(1, id);
+                int affectedRows = deleteBookStmt.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new SQLException("Error deleting book: no rows affected.");
+                }
+            }
+            try(PreparedStatement insertLastChangeStmt = connection.prepareStatement(insertLastChange)) {
+                insertLastChangeStmt.setInt(1, id);
+                insertLastChangeStmt.setInt(2, user);
+                insertLastChangeStmt.setString(3, "delete");
+                insertLastChangeStmt.executeUpdate();
+            }
+
+            System.out.println("Book deleted with name: " + bookName);
         }catch (SQLException e){
             System.err.println("Error deleting book: " + e.getMessage());
         }

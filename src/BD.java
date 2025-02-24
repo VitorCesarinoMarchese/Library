@@ -49,9 +49,9 @@ public class BD {
                 System.out.println("Book ID: " + resultSet.getInt("id"));
                 System.out.println("Book NAME: " + resultSet.getString("name"));
                 System.out.println("Book PRICE: " + resultSet.getString("price"));
-                System.out.println("Book TOTAL:" + resultSet.getInt("total_quantity"));
-                System.out.println("Book RENT:" + resultSet.getInt("rent_quantity"));
-                System.out.println("Book AVAILABLE:" + resultSet.getInt("available_quantity"));
+                System.out.println("Book TOTAL: " + resultSet.getInt("total_quantity"));
+                System.out.println("Book RENT: " + resultSet.getInt("rent_quantity"));
+                System.out.println("Book AVAILABLE: " + resultSet.getInt("available_quantity"));
                 System.out.println("---------------------------------------");
             }
         }catch (SQLException e){
@@ -66,8 +66,8 @@ public class BD {
                 System.out.println("Last Change ID: " + resultSet.getInt("id"));
                 System.out.println("Book ID: " + resultSet.getString("book_id"));
                 System.out.println("User ID: " + resultSet.getString("user_id"));
-                System.out.println("Last Change Type:" + resultSet.getInt("type"));
-                System.out.println("Last Change DATE:" + resultSet.getString("date"));
+                System.out.println("Last Change Type: " + resultSet.getString("type").toUpperCase());
+                System.out.println("Last Change DATE: " + resultSet.getString("date"));
                 System.out.println("---------------------------------------");
             }
         }catch (SQLException e){
@@ -153,18 +153,25 @@ public class BD {
 
         try(Connection connection = DriverManager.getConnection("jdbc:sqlite:database.db")){
             String bookName = null;
-            PreparedStatement getBookNamestmt = connection.prepareStatement(getBookName);
 
             connection.setAutoCommit(false);
 
-            getBookNamestmt.setInt(1, id);
-            ResultSet rs = getBookNamestmt.executeQuery();
-            if(rs.next()){
-                bookName = rs.getString("name");
-            }else{
-                throw new SQLException("No book find with ID: " + id);
+            try(PreparedStatement getBookNamesStmt = connection.prepareStatement(getBookName)) {
+                getBookNamesStmt.setInt(1, id);
+                ResultSet rs = getBookNamesStmt.executeQuery();
+                if(rs.next()){
+                    bookName = rs.getString("name");
+                }else{
+                    throw new SQLException("No book find with ID: " + id);
+                }
             }
 
+            try(PreparedStatement insertLastChangeStmt = connection.prepareStatement(insertLastChange)) {
+                insertLastChangeStmt.setInt(1, id);
+                insertLastChangeStmt.setInt(2, user);
+                insertLastChangeStmt.setString(3, "delete");
+                insertLastChangeStmt.executeUpdate();
+            }
             try (PreparedStatement deleteBookStmt = connection.prepareStatement(deleteBook)) {
                 deleteBookStmt.setInt(1, id);
                 int affectedRows = deleteBookStmt.executeUpdate();
@@ -172,18 +179,13 @@ public class BD {
                     throw new SQLException("Error deleting book: no rows affected.");
                 }
             }
-            try(PreparedStatement insertLastChangeStmt = connection.prepareStatement(insertLastChange)) {
-                insertLastChangeStmt.setInt(1, id);
-                insertLastChangeStmt.setInt(2, user);
-                insertLastChangeStmt.setString(3, "delete");
-                insertLastChangeStmt.executeUpdate();
-            }
-
+            connection.commit();
             System.out.println("Book deleted with name: " + bookName);
         }catch (SQLException e){
             System.err.println("Error deleting book: " + e.getMessage());
         }
     }
+
     public void updateBook(int id, BookRequest book) {
         try {
             ResultSet oldName = statement.executeQuery("SELECT name FROM books WHERE id= '" + id + "'");

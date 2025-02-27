@@ -41,6 +41,8 @@ public class BD {
 //            System.out.println(rs.getString("password"));
 //            System.out.println(rs.getString("adm"));
 //        }
+//        ResultSet resultSet = statement.executeQuery("SELECT * FROM books WHERE id=1");
+//        System.out.println(resultSet.getInt("id"));
     }
     public void printBooks() {
         try {
@@ -93,16 +95,12 @@ public class BD {
     public void insertBook(BookRequest book, int user_id) {
         String insertBookQuery = "INSERT INTO books(name, price, total_quantity, rent_quantity, available_quantity) " +
                 "VALUES(?, ?, ?, ?, ?)";
-        String selectBookQuery = "SELECT * FROM books WHERE name = ?";
         String insertLastChangesQuery = "INSERT INTO last_changes(book_id, user_id, type) VALUES(?, ?, ?)";
-        String selectLastChangeQuery = "SELECT id FROM last_changes WHERE book_id = ? AND user_id = ?";
         String updateBookQuery = "UPDATE books SET last_changes_id = ? WHERE id = ?";
 
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:database.db");
              PreparedStatement insertBookStmt = connection.prepareStatement(insertBookQuery, Statement.RETURN_GENERATED_KEYS);
-             PreparedStatement selectBookStmt = connection.prepareStatement(selectBookQuery);
              PreparedStatement insertLastChangeStmt = connection.prepareStatement(insertLastChangesQuery, Statement.RETURN_GENERATED_KEYS);
-             PreparedStatement selectLastChangeStmt = connection.prepareStatement(selectLastChangeQuery);
              PreparedStatement updateBookStmt = connection.prepareStatement(updateBookQuery)) {
 
             connection.setAutoCommit(false);
@@ -186,11 +184,31 @@ public class BD {
         }
     }
 
-    public void updateBook(int id, BookRequest book) {
+    public void updateBook(int id,int user_id,  BookRequest book) {
+        String updateBook = "UPDATE books(name, price, total_quantity, rent_quantity, available_quantity)" +  " " +
+                "values(?, ?, ?, ?, ?)" + "WHERE id= ?";
+        String insertLastChange = "INSERT INTO last_changes(book_id, user_id, type) VALUES(?, ?, ?)";
+        String selectBook = "SELECT name FROM books WHERE id= ?";
         try {
-            ResultSet oldName = statement.executeQuery("SELECT name FROM books WHERE id= '" + id + "'");
-            statement.executeUpdate( "UPDATE books SET name='" + book.Name + "', price='" + book.Price + "' WHERE id= '" + id + "'");
-            System.out.println("Book updated with name: " + book.Name);
+            Book oldBook;
+            connection.setAutoCommit(false);
+            try(PreparedStatement selectBookstmt = connection.prepareStatement(selectBook)){
+                ResultSet rs = selectBookstmt.executeQuery();
+                oldBook = new Book(rs.getInt("id"),rs.getString("name"), rs.getString("price"),rs.getInt("totalquantity"), rs.getInt("rentQuantity"), rs.getInt("availablequantity"), rs.getInt("last_changes_id"), rs.getString("creation_date"));
+            }
+            try(PreparedStatement updateBookstmt = connection.prepareStatement(updateBook)){
+                updateBookstmt.setString(1, book.Name);
+                updateBookstmt.setString(2, book.Price);
+                updateBookstmt.setInt(3, book.TotalQuantity);
+                updateBookstmt.setInt(4, book.RentQuantity);
+                updateBookstmt.setInt(5, book.AvailableQuantity);
+                updateBookstmt.setInt(6, id);
+            }
+            try(PreparedStatement insertLastChangestmt = connection.prepareStatement(insertLastChange)){
+                insertLastChangestmt.setInt(1, oldBook.Id);
+                insertLastChangestmt.setInt(2, user_id);
+                insertLastChangestmt.setString(3, "update");
+            }
         }catch (SQLException e){
             System.err.println("Error updating book: " + e.getMessage());
         }
